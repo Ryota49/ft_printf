@@ -6,110 +6,109 @@
 /*   By: jemonthi <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/06 19:01:21 by jemonthi          #+#    #+#             */
-/*   Updated: 2025/11/10 10:22:55 by jemonthi         ###   ########.fr       */
+/*   Updated: 2025/11/14 12:05:08 by jemonthi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-//#include "libft.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <unistd.h>
+#include "ft_printf.h"
 
-void	ft_putchar(char c)
+void	check_after3(char c, va_list args, int *ret)
 {
-	write(1, &c, 1);
-}
+	unsigned int	nbr_hexa;
+	unsigned int	nb_unsigned;
 
-void	ft_address_p(unsigned long p)
-{
-	char			*base;
-	unsigned int	len_base;
-
-	len_base = 16;
-	base = "0123456789abcdef";
-	if (p >= len_base)
+	if (c == 'u')
 	{
-		ft_address_p(p / len_base);
-		ft_address_p(p % len_base);
+		nb_unsigned = va_arg(args, unsigned int);
+		ft_putnbr_unsigned(nb_unsigned, ret);
 	}
-	else
-		ft_putchar(base[p]);
-}
-
-void	ft_putstr(char *str)
-{
-	int	i;
-
-	i = 0;
-	while (str[i])
+	else if (c == 'x')
 	{
-		write (1, &str[i], 1);
-		i++;
+		nbr_hexa = va_arg(args, unsigned int);
+		print_number_hexa_lower(nbr_hexa, ret);
+	}
+	else if (c == 'X')
+	{
+		nbr_hexa = va_arg(args, unsigned int);
+		print_number_hexa_upper(nbr_hexa, ret);
 	}
 }
 
-int	check_after2(char c, va_list test)
+void	check_after2(char c, va_list args, int *ret)
 {
 	void	*p;
+	int		nb;
 
 	if (c == 'p')
 	{
-		p = va_arg(test, void *);
+		p = va_arg(args, void *);
 		if (p == 0)
 		{
-			ft_putstr("(nil)");
-			return (0);
+			ft_putstr("(nil)", ret);
+			return ;
 		}
-		ft_putstr("0x");
-		ft_address_p((unsigned long)p);
+		ft_putstr("0x", ret);
+		ft_address_p((unsigned long long)p, ret);
 	}
-	return (0);
+	else if (c == 'd' || c == 'i')
+	{
+		nb = va_arg(args, int);
+		ft_putnbr(nb, ret);
+	}
+	else
+		check_after3(c, args, ret);
 }
 
-int	check_after(char c, va_list test)
+void	check_after(char c, va_list args, int *ret)
 {
 	char	stock;
 	char	*str;
 
 	if (c == 'c')
 	{
-		stock = va_arg(test, int);
+		stock = va_arg(args, int);
 		write(1, &stock, 1);
+		(*ret)++;
 	}
 	else if (c == 's')
 	{
-		str = va_arg(test, char *);
+		str = va_arg(args, char *);
 		if (!str)
 		{
-			ft_putstr("(null)");
-			return (0);
+			ft_putstr("(null)", ret);
+			return ;
 		}
-		ft_putstr(str);
+		ft_putstr(str, ret);
 	}
 	else if (c == '%')
-		ft_putchar(1, '%', 1);
+		ft_putchar('%', ret);
 	else
-		check_after2(c, test);
-	return (0);
+		check_after2(c, args, ret);
 }
 
 int	ft_printf(const char *str, ...)
 {
-	va_list	test;
+	va_list	args;
 	int		i;
+	int		ret;
 
 	i = 0;
-	va_start(test, str);
+	ret = 0;
+	va_start(args, str);
 	while (str[i])
 	{
-		if (str[i] == '%')
+		if (str[i] == '%' && str[i + 1] != '\0')
 		{
 			i++;
-			check_after(str[i], test);
+			check_after(str[i], args, &ret);
 		}
 		else
+		{
 			write(1, &str[i], 1);
+			ret++;
+		}
 		i++;
 	}
-	return (0);
+	va_end(args);
+	return (ret);
 }
